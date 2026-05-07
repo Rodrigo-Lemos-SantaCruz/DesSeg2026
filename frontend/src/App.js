@@ -1,59 +1,30 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import { Routes, Route,  } from 'react-router-dom'
+import Login from './Login';
+import Admin from './Admin';
+import Usuario from './User';
 
 function App() {
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [mensagem, setMensagem] = useState('');
-
-  const registrar = async () => {
-    try {
-      const res = await axios.post('http://localhost:3001/register', {
-        username,
-        password
-      });
-      setMensagem(res.data.message);
-    } catch (err) {
-      setMensagem("Erro ao registrar");
-    }
-  };
-
-  const login = async () => {
-    try {
-      const res = await axios.post('http://localhost:3001/login', {
-        username,
-        password
-      });
-      setMensagem(res.data.message);
-    } catch (err) {
-      setMensagem("Credenciais inválidas");
-    }
-  };
-
   return (
-    <div style={{ padding: 40 }}>
-      <h2>PoC - Login com Hash</h2>
+    <Routes>
 
-      <input
-        placeholder="Usuário"
-        onChange={e => setUsername(e.target.value)}
+      <Route
+        path="/"
+        element={<Login />}
       />
-      <br /><br />
 
-      <input
-        type="password"
-        placeholder="Senha"
-        onChange={e => setPassword(e.target.value)}
+      <Route
+        path="/admin"
+        element={<Admin />}
       />
-      <br /><br />
 
-      <button onClick={registrar}>Registrar</button>
-      <button onClick={login}>Login</button>
+      <Route
+        path="/usuario"
+        element={<Usuario />}
+      />
 
-      <p>{mensagem}</p>
-    </div>
+    </Routes>
   );
 }
 
-export default App;
+export default App

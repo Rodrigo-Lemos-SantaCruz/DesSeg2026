@@ -2,12 +2,12 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
 const db = require('./db');
-
+const jwt = require('jsonwebtoken');
 const app = express();
 
 app.use(express.json());
 app.use(cors());
-
+const secret = 'SEGREDO_JWT'
 
 app.post('/register', async (req, res) => {
   const { username, password } = req.body;
@@ -20,13 +20,13 @@ app.post('/register', async (req, res) => {
     const hash = await bcrypt.hash(password, 10);
 
     db.run(
-      `INSERT INTO users (username, password_hash) VALUES (?, ?)`,
-      [username, hash],
+      `INSERT INTO users (username, password_hash, nivelAcesso, numTentativas) VALUES (?, ?, ?, ?)`,
+      [username, hash, 0, 0],
       function (err) {
         if (err) {
           return res.status(400).json({ error: "Usuário já existe" });
         }
-        res.json({ message: "Usuário criado com sucesso" });
+        res.status(200).json({ message: "Usuário criado com sucesso" });
       }
     );
   } catch (error) {
@@ -56,10 +56,70 @@ app.post('/login', (req, res) => {
         return res.status(401).json({ error: "Credenciais inválidas" });
       }
 
-      res.json({ message: "Login realizado com sucesso" });
+    const token = jwt.sign(
+        {
+          id: user.id,
+          username: user.username,
+          nivelAcesso: user.nivelAcesso
+        },
+        secret,
+        {
+          expiresIn: '1h'
+        }
+      )
+
+      res.json({ message: "Login realizado com sucesso", token: token });
     }
   );
 });
+
+function verificarToken(req, res, next) {
+
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).json({
+      error: 'Token não enviado'
+    });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+
+    const decoded = jwt.verify(
+      token,
+      secret
+    );
+
+    req.user = decoded;
+
+    next();
+
+  } catch {
+
+    return res.status(403).json({
+      error: 'Token inválido'
+    });
+  }
+}
+
+app.get(
+  '/admin',
+  verificarToken,
+  (req, res) => {
+
+    if (req.user.nivelAcesso !== 1) {
+      return res.status(403).json({
+        error: 'Acesso negado'
+      });
+    }
+
+    res.status(200).json({
+      message: 'Área admin'
+    });
+  }
+);
 
 app.listen(3001, () => {
   console.log("Servidor rodando na porta 3001");

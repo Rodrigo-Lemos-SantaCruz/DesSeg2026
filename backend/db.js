@@ -7,7 +7,9 @@ db.serialize(() => {
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE,
-      password_hash TEXT
+      password_hash TEXT,
+      nivelAcesso INTEGER,
+      numTentativas INTEGER
     )
   `);
 });
