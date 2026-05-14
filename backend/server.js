@@ -8,6 +8,7 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 const secret = 'SEGREDO_JWT'
+const politicaSenha = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{7,}$/
 
 app.post('/register', async (req, res) => {
   const { username, password } = req.body;
@@ -15,7 +16,11 @@ app.post('/register', async (req, res) => {
   if (!username || !password) {
     return res.status(400).json({ error: "Dados obrigatórios" });
   }
-
+  
+  if(!politicaSenha.test(password)){
+    console.log('Politica de senha negada')
+    return res.status(400).json({ error: "Politica não atendida!" })
+  }
   try {
     const hash = await bcrypt.hash(password, 10);
 
@@ -47,12 +52,26 @@ app.post('/login', (req, res) => {
         return res.status(401).json({ error: "Credenciais inválidas" });
       }
 
+      if(user.numTentativas === 3){
+        console.log('Usuario Bloqueado')
+        return res.status(401).json({ error: "Número de Tentativas Excedido" })
+      }
+
       const senhaCorreta = await bcrypt.compare(
         password,
         user.password_hash
       );
 
       if (!senhaCorreta) {
+        db.run(
+          `UPDATE users SET numTentativas = ? WHERE id = ?`,
+          [user.numTentativas+1, user.id],
+          function (err) {
+            if (err) {
+              console.log(err);
+            }
+          }
+        )
         return res.status(401).json({ error: "Credenciais inválidas" });
       }
 
