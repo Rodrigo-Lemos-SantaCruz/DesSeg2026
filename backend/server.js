@@ -26,7 +26,7 @@ app.post('/register', async (req, res) => {
 
     db.run(
       `INSERT INTO users (username, password_hash, nivelAcesso, numTentativas) VALUES (?, ?, ?, ?)`,
-      [username, hash, 0, 0],
+      [username, hash, 1, 0],
       function (err) {
         if (err) {
           return res.status(400).json({ error: "Usuário já existe" });
@@ -91,6 +91,32 @@ app.post('/login', (req, res) => {
     }
   );
 });
+
+app.post('/login-inseguro', (req, res) => {
+   const { username, password } = req.body;
+
+  const sql = `
+    SELECT * FROM users
+    WHERE username = '${username}'
+    AND password_hash = '${password}'
+  `;
+
+  console.log(sql);
+
+  db.get(sql, [], (err, user) => {
+
+    if (user) {
+
+      return res.json({
+        message: 'Login realizado'
+      });
+    }
+
+    res.status(401).json({
+      error: 'Credenciais inválidas'
+    });
+  });
+})
 
 function verificarToken(req, res, next) {
 
